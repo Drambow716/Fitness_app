@@ -1,4 +1,5 @@
 # imports
+# %%
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
@@ -36,20 +37,12 @@ ns_cols =['android.sensor.gravity#mean',
  'android.sensor.proximity#min',
  'android.sensor.proximity#max',
  'android.sensor.proximity#std']
-
 df.drop(ns_cols,axis =1, inplace =True)
 
-users_train = ['U9',
- 'U4',
- 'U1',
- 'U13',
- 'U8',
- 'U2',
+users_train = ['U9','U1','U13','U8','U2',
  'U6',
- 'U5',
- 'U3','U7']
-
-users_test = ['U12','U10','U11']
+ 'U3','U10','U11','U7','U12']
+users_test = ['U5','U6']
 
 df_train = df[df.user.isin(users_train)]
 df_test = df[df.user.isin(users_test)]
@@ -63,12 +56,11 @@ def pairing(data,seq_len =65):
             
             data_f = data[ (data.user == user) & (data.target == target) ].iloc[:,:-2]
             if len(data_f.id) > seq_len:
-                y.append(target)
-                for i in range(0,1):
+                for i in range(0,(len(data_f.id)-seq_len),seq_len):
                     seq = np.zeros( (seq_len,data_f.shape[1]) )
                     for j in range(seq_len):
-                        seq[j] = data_f.values[j]
-    
+                        seq[j] =  data_f.iloc[i:i+seq_len,:].values[j]
+                    y.append(target)
                     x.append(seq.flatten())
 
     return np.array(x),np.array(y)
@@ -77,9 +69,7 @@ X_train, y_train = pairing(df_train,seq_len = 65)
 X_test, y_test = pairing(df_test,seq_len = 65)
 
 # scaling
-
 scaler = StandardScaler()
-
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
@@ -89,8 +79,7 @@ def run_learning(model):
     predictions = model.predict(X_test_scaled)
     return accuracy_score(y_test,predictions) , plot_confusion_matrix(model,X_test_scaled,y_test)
 
-
-accuracy, confusion_matrix = run_learning(ExtraTreesClassifier())
+accuracy, confusion_matrix = run_learning(RandomForestClassifier())
 
 print(accuracy)
 
@@ -108,6 +97,4 @@ U2   ['Car' 'Still' 'Walking']   2897
 U11   ['Car']   1780
 U5   ['Still' 'Walking']   186
 U9   ['Train' 'Walking']   825
-
-
 """
